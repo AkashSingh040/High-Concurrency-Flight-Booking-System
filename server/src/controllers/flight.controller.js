@@ -1,7 +1,10 @@
 const flightService=require("../services/flight.service");
 
 const getFlights=(req,res)=>{
-    const flights=flightService.getAllFlights();
+    const {from,to}=req.query;
+
+    const flights=flightService.getFlights({from,to});
+
     res.json(flights);
 };
 

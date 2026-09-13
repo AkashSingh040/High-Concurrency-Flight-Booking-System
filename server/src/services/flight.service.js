@@ -15,8 +15,21 @@ const flights = [
   }
 ];
 
-const getAllFlights = () => {
-  return flights;
+// const getAllFlights = () => {
+//   return flights;
+// };
+
+const getFlights=({from,to})=>{
+  let result=flights;
+
+  if(from){
+    result=result.filter(flight=>flight.from===from);
+  }
+
+  if(to){
+    result=result.filter(flight=>flight.to===to);
+  }
+  return result;
 };
 
 const getFlightById = (id) => {
@@ -76,7 +89,7 @@ const deleteFlight = (id) => {
 };
 
 module.exports = {
-  getAllFlights,
+  getFlights,
   getFlightById,
   createFlight,
   updateFlight,
