@@ -3,9 +3,16 @@ const flightService=require("../services/flight.service");
 const getFlights=(req,res)=>{
     const {from,to}=req.query;
 
-    const flights=flightService.getFlights({from,to});
+    const page=Number(req.query.page) || 1;
+    const limit=Number(req.query.limit) || 10;
 
-    res.json(flights);
+    const flights=flightService.getFlights({from,to,page,limit});
+
+    res.json({
+        success:true,
+        data:flights.data,
+        pagination:flights.pagination
+    });
 };
 
 const getFlightById=(req,res)=>{
