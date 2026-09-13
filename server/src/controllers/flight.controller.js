@@ -1,18 +1,21 @@
 const flightService=require("../services/flight.service");
 
-const getFlights=(req,res)=>{
-    const {from,to}=req.query;
+const getFlights=async (req,res,next)=>{
+    try{  const {from,to}=req.query;
 
-    const page=Number(req.query.page) || 1;
-    const limit=Number(req.query.limit) || 10;
+      const page=Number(req.query.page) || 1;
+      const limit=Number(req.query.limit) || 10;
 
-    const flights=flightService.getFlights({from,to,page,limit});
+      const flights=flightService.getFlights({from,to,page,limit});
 
-    res.json({
-        success:true,
-        data:flights.data,
-        pagination:flights.pagination
-    });
+      res.json({
+          success:true,
+          data:flights.data,
+          pagination:flights.pagination
+      });}
+      catch(error){
+        next(error);
+      }
 };
 
 const getFlightById=(req,res)=>{
