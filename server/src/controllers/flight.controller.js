@@ -19,15 +19,25 @@ const getFlightById=(req,res)=>{
     const flight=flightService.getFlightById(req.params.id);
     if(!flight){
         return res.status(404).json({
-            message:"Flight not found"
+            success:false,
+            error:{
+                code:"FLIGHT_NOT_FOUND",
+                message:"Flight not found"
+            }
         });
     }
-    res.json(flight);
+    res.json({
+        success:true,
+        data:flight
+    });
 };
 
 const createFlight=(req,res)=>{
     const flight=flightService.createFlight(req.body);
-    res.status(201).json(flight);
+    res.status(201).json({
+        success:true,
+        data:flight
+    });
 };
 
 const updateFlight = (req, res) => {
@@ -38,11 +48,18 @@ const updateFlight = (req, res) => {
 
   if (!flight) {
     return res.status(404).json({
-      message: "Flight not found"
+      success: false,
+      error: {
+        code: "FLIGHT_NOT_FOUND",
+        message: "Flight not found"
+      }
     });
   }
 
-  res.json(flight);
+  res.json({
+    success:true,
+    data:flight
+  });
 };
 
 const patchFlight = (req, res) => {
@@ -53,11 +70,18 @@ const patchFlight = (req, res) => {
 
   if (!flight) {
     return res.status(404).json({
-      message: "Flight not found"
+      success: false,
+      error: {
+        code: "FLIGHT_NOT_FOUND",
+        message: "Flight not found"
+      }
     });
   }
 
-  res.json(flight);
+  res.json({
+    success: true,
+    data: flight
+  });
 };
 
 const deleteFlight = (req, res) => {
@@ -65,7 +89,11 @@ const deleteFlight = (req, res) => {
 
   if (!deleted) {
     return res.status(404).json({
-      message: "Flight not found"
+      success: false,
+      error: {
+        code: "FLIGHT_NOT_FOUND",
+        message: "Flight not found"
+      }
     });
   }
 
