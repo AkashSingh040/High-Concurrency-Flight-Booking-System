@@ -1,19 +1,23 @@
+const flightService=require("../services/flight.service");
+
 const getFlights=(req,res)=>{
-    res.json({
-        message:"Get all flights"
-    });
+    const flights=flightService.getAllFlights();
+    res.json(flights);
 };
 
 const getFlightById=(req,res)=>{
-    res.json({
-        message:`Get flight ${req.params.id}`
-    });
+    const flight=flightService.getFlightById(req.params.id);
+    if(!flight){
+        return res.status(404).json({
+            message:"Flight not found"
+        });
+    }
+    res.json(flight);
 };
 
 const createFlight=(req,res)=>{
-    res.status(201).json({
-        message:"Fligh created"
-    });
+    const flight=flightService.createFlight(req.body);
+    res.status(201).json(flight);
 };
 
 module.exports={
