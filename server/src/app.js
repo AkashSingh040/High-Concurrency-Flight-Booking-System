@@ -1,6 +1,8 @@
 const express=require("express");
 const flighroutes=require("./routes/flight.routes");
 const authRoutes=require("./routes/auth.routes")
+const bookingRoutes=require("./routes/booking.routes");
+
 const requestLogger=require("./middleware/requestLogger");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -17,6 +19,7 @@ app.use(requestLogger);
 
 app.use("/api/v1/flights",flighroutes);
 app.use("/api/v1/auth",authRoutes);
+app.use("/api/v1/bookings",bookingRoutes);
 
 
 app.get("/api/health",(req,res)=>{
