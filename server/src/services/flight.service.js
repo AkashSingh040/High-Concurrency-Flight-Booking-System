@@ -34,8 +34,52 @@ const createFlight = (flightData) => {
   return flight;
 };
 
+const updateFlight=(id,data)=>{
+  const index=flights.findIndex(flight=> flight.id===id);
+
+  if(index===-1){
+    return null;
+  }
+
+  flights[index]={
+    id,...data
+  };
+
+  return flights[index];
+};
+
+const patchFlight = (id, data) => {
+  const index = flights.findIndex(flight => flight.id === id);
+
+  if (index === -1) {
+    return null;
+  }
+
+  flights[index] = {
+    ...flights[index],
+    ...data
+  };
+
+  return flights[index];
+};
+
+const deleteFlight = (id) => {
+  const index = flights.findIndex(flight => flight.id === id);
+
+  if (index === -1) {
+    return false;
+  }
+
+  flights.splice(index, 1);
+
+  return true;
+};
+
 module.exports = {
   getAllFlights,
   getFlightById,
-  createFlight
+  createFlight,
+  updateFlight,
+  patchFlight,
+  deleteFlight
 };

@@ -8,7 +8,7 @@ const app=express();
 app.use(express.json());
 app.use(requestLogger);
 
-app.use("/api/flights",flighroutes);
+app.use("/api/v1/flights",flighroutes);
 
 
 app.get("/api/health",(req,res)=>{

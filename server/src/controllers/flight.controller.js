@@ -20,8 +20,53 @@ const createFlight=(req,res)=>{
     res.status(201).json(flight);
 };
 
+const updateFlight = (req, res) => {
+  const flight = flightService.updateFlight(
+    req.params.id,
+    req.body
+  );
+
+  if (!flight) {
+    return res.status(404).json({
+      message: "Flight not found"
+    });
+  }
+
+  res.json(flight);
+};
+
+const patchFlight = (req, res) => {
+  const flight = flightService.patchFlight(
+    req.params.id,
+    req.body
+  );
+
+  if (!flight) {
+    return res.status(404).json({
+      message: "Flight not found"
+    });
+  }
+
+  res.json(flight);
+};
+
+const deleteFlight = (req, res) => {
+  const deleted = flightService.deleteFlight(req.params.id);
+
+  if (!deleted) {
+    return res.status(404).json({
+      message: "Flight not found"
+    });
+  }
+
+  res.status(204).send();
+};
+
 module.exports={
     getFlights,
     getFlightById,
-    createFlight
+    createFlight,
+    updateFlight,
+    patchFlight,
+    deleteFlight
 };
