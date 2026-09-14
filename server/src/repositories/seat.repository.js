@@ -13,13 +13,15 @@ const findByIdForUpdate = async (connection,id) => {
 
 const updateStatus = async (connection, id, status) => {
 
-    await connection.query(
+    const [result]=await connection.query(
         `UPDATE seats
          SET status = ?
          WHERE id = ?`,
         [status, id]
     );
+    return result.affectedRows;//to verify state transaction actually happened , using service
 };
+
 
 module.exports = {
     findByIdForUpdate,

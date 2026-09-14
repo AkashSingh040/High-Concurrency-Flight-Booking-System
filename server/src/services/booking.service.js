@@ -15,7 +15,7 @@ const createBooking = async ({
         
         const seat=await seatRepository.findByIdForUpdate(connection,seatId);
 
-        if (seat.status === "BOOKED") {
+        if (seat.status !== "AVAILABLE") {
             const error = new Error("Seat is already booked");
             error.statusCode = 409;
             error.code = "SEAT_UNAVAILABLE";
@@ -43,7 +43,14 @@ const createBooking = async ({
             seatNumber: seat.seat_number
         });
 
-        await seatRepository.updateStatus(connection,seatId,"BOOKED");
+        const updatedRows=await seatRepository.updateStatus(connection,seatId,"BOOKED");
+        
+        if(updatedRows!==1){
+            const error=new Error("Failed to reserve seat");
+            error.statusCode=500;
+            error.code="SEAT_UPDATE_FAILED";
+            throw error;
+        }
 
         await connection.commit();
         return booking;
