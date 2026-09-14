@@ -11,10 +11,17 @@ const createBooking = async ({
     const connection=await pool.getConnection();
 
     try{
-        await connection.beginTransaction();//start transaction
+        await connection.beginTransaction();//start isolated transaction
         
-        const seat=await seatRepository.findById(connection,seatId);
-        
+        const seat=await seatRepository.findByIdForUpdate(connection,seatId);
+
+        if (seat.status === "BOOKED") {
+            const error = new Error("Seat is already booked");
+            error.statusCode = 409;
+            error.code = "SEAT_UNAVAILABLE";
+            throw error;
+        }
+
         if (!seat) {
         const error = new Error("Seat not found");
         error.statusCode = 404;
@@ -29,21 +36,14 @@ const createBooking = async ({
         throw error;
         }
 
-        const availableSeat=await seatRepository.findAvailableSeat(connection,seatId,flightId);
-
-        if(!availableSeat){
-            const error=new Error("Seat is already booked");
-            error.statusCode=409;
-            error.code="SEAT_UNAVAILABLE";
-            throw error;
-        }
-
         const booking = await bookingRepository.create(connection,{
             userId,
             flightId,
             seatId,
-            seatNumber: availableSeat.seat_number
+            seatNumber: seat.seat_number
         });
+
+        await seatRepository.updateStatus(connection,seatId,"BOOKED");
 
         await connection.commit();
         return booking;

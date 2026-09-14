@@ -1,29 +1,27 @@
-const findById = async (connection,id) => {
+const findByIdForUpdate = async (connection,id) => {
 
     const [rows] = await connection.query(
         `SELECT *
          FROM seats
-         WHERE id = ?`,
+         WHERE id = ?
+         FOR UPDATE`,
         [id]
     );
 
     return rows[0];
 };
 
-const findAvailableSeat = async (connection, seatId, flightId) => {
-    const [rows] = await connection.query(
-        `SELECT id, flight_id, seat_number, status
-         FROM seats
-         WHERE id = ?
-         AND flight_id = ?
-         AND status = 'AVAILABLE'`,
-        [seatId, flightId]
-    );
+const updateStatus = async (connection, id, status) => {
 
-    return rows[0];
+    await connection.query(
+        `UPDATE seats
+         SET status = ?
+         WHERE id = ?`,
+        [status, id]
+    );
 };
 
 module.exports = {
-    findById,
-    findAvailableSeat
+    findByIdForUpdate,
+    updateStatus
 };
