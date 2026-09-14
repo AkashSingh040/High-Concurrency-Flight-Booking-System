@@ -2,7 +2,9 @@ const create = async (connection,{
     userId,
     flightId,
     seatId,
-    seatNumber
+    seatNumber,
+    idempotencyKey,
+    requestFingerprint
 }) => {
 
     const [result] = await connection.query(
@@ -11,14 +13,18 @@ const create = async (connection,{
             user_id,
             flight_id,
             seat_id,
-            seat_number
+            seat_number,
+            idempotency_key,
+            request_fingerprint
         )
-        VALUES (?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?,?,?)`,
         [
             userId,
             flightId,
             seatId,
-            seatNumber
+            seatNumber,
+            idempotencyKey,
+            requestFingerprint
         ]
     );
 
@@ -32,6 +38,24 @@ const create = async (connection,{
     return rows[0];
 };
 
+const findByIdempotencyKey = async (
+    db,
+    userId,
+    idempotencyKey
+) => {
+
+    const [rows] = await db.query(
+        `SELECT *
+         FROM bookings
+         WHERE user_id = ?
+         AND idempotency_key = ?`,
+        [userId, idempotencyKey]
+    );
+
+    return rows[0];
+};
+
 module.exports = {
-    create
+    create,
+    findByIdempotencyKey
 };

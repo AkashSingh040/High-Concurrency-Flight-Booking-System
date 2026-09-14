@@ -1,12 +1,51 @@
 const pool=require("../config/db");
 const bookingRepository = require("../repositories/booking.repository");
 const seatRepository = require("../repositories/seat.repository");
+const {createRequestFingerprint}=require("../utils/idempotency");
+
 
 const createBooking = async ({
     userId,
     flightId,
-    seatId
+    seatId,
+    idempotencyKey
 }) => {
+
+    //create fingerprint
+    const requestFingerprint=createRequestFingerprint({
+        flightId,seatId
+    });
+    const existingBooking =
+        await bookingRepository.findByIdempotencyKey(
+            pool,
+            userId,
+            idempotencyKey
+        );
+
+
+    if (existingBooking) {
+
+        // Same key but different request
+        if (
+            existingBooking.request_fingerprint !==
+            requestFingerprint
+        ) {
+
+            const error = new Error(
+                "Idempotency key was already used for a different request"
+            );
+
+            error.statusCode = 409;
+            error.code = "IDEMPOTENCY_KEY_REUSED";
+
+            throw error;
+        }
+
+        return {
+            created: false,
+            booking: existingBooking
+        };
+    }
 
     const connection=await pool.getConnection();
 
@@ -40,7 +79,9 @@ const createBooking = async ({
             userId,
             flightId,
             seatId,
-            seatNumber: seat.seat_number
+            seatNumber: seat.seat_number,
+            idempotencyKey,
+            requestFingerprint
         });
 
         const updatedRows=await seatRepository.updateStatus(connection,seatId,"BOOKED");
@@ -58,6 +99,44 @@ const createBooking = async ({
     } catch(error){
 
         await connection.rollback();
+        if (error.code === "ER_DUP_ENTRY") {
+
+            const existingBooking =
+                await bookingRepository.findByIdempotencyKey(
+                    pool,
+                    userId,
+                    idempotencyKey
+                );
+
+
+            if (existingBooking) {
+
+                if (
+                    existingBooking.request_fingerprint !==
+                    requestFingerprint
+                ) {
+
+                    const conflict =
+                        new Error(
+                            "Idempotency key was already used for a different request"
+                        );
+
+                    conflict.statusCode = 409;
+                    conflict.code =
+                        "IDEMPOTENCY_KEY_REUSED";
+
+                    throw conflict;
+                }
+
+
+                return {
+                    created: false,
+                    booking: existingBooking
+                };
+            }
+        }
+
+
         throw error;
 
     } finally {
