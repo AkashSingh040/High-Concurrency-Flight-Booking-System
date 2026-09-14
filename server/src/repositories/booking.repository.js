@@ -1,13 +1,11 @@
-const pool = require("../config/db");
-
-const create = async ({
+const create = async (connection,{
     userId,
     flightId,
     seatId,
     seatNumber
 }) => {
 
-    const [result] = await pool.query(
+    const [result] = await connection.query(
         `INSERT INTO bookings
         (
             user_id,
@@ -24,7 +22,7 @@ const create = async ({
         ]
     );
 
-    const [rows] = await pool.query(
+    const [rows] = await connection.query(
         `SELECT *
          FROM bookings
          WHERE id = ?`,

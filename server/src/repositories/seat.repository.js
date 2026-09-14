@@ -1,8 +1,6 @@
-const pool = require("../config/db");
+const findById = async (connection,id) => {
 
-const findById = async (id) => {
-
-    const [rows] = await pool.query(
+    const [rows] = await connection.query(
         `SELECT *
          FROM seats
          WHERE id = ?`,
