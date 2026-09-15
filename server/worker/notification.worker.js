@@ -1,4 +1,11 @@
-require("dotenv").config();
+require("dotenv").config({path: require("path").resolve(__dirname, "../.env")});
+
+const processedEventRepository =
+    require("../src/repositories/processed-event.repository");
+
+const {
+    sendBookingConfirmation
+} = require("../src/services/notification.service");
 
 const redisClient =
     require("../src/config/redis");
@@ -38,6 +45,22 @@ const processEvent = async (message) => {
     );
 
 
+    // Check whether event was already processed
+    const existingEvent =
+        await processedEventRepository
+            .findByEventId(eventId);
+
+
+    if (existingEvent) {
+
+        console.log(
+            `Event ${eventId} already processed. Skipping notification.`
+        );
+
+        return;
+    }
+
+
     const bookingData =
         JSON.parse(data);
 
@@ -46,32 +69,26 @@ const processEvent = async (message) => {
         eventType === "BOOKING_CREATED"
     ) {
 
-        console.log(
-            `Sending booking confirmation for booking ${bookingData.bookingId}`
-        );
-
-        console.log(
-            `User: ${bookingData.userId}`
-        );
-
-        console.log(
-            `Flight: ${bookingData.flightId}`
-        );
-
-        console.log(
-            `Seat: ${bookingData.seatId}`
-        );
-
-
-        // Simulated notification
-        console.log(
-            "Notification sent successfully"
-        );
-        // //simulate failure by commenting above and uncommeting below
-        // throw new Error(
-        //     "Simulated email service failure"
-        // );
+        await sendBookingConfirmation({
+            bookingId: bookingData.bookingId,
+            userId: bookingData.userId,
+            flightId: bookingData.flightId,
+            seatId: bookingData.seatId
+        });
     }
+
+
+    // Mark event as processed only after
+    // notification succeeds
+    await processedEventRepository.markProcessed({
+        eventId,
+        eventType
+    });
+
+
+    console.log(
+        `Event ${eventId} marked as processed`
+    );
 };
 
 
@@ -228,7 +245,6 @@ const startWorker = async () => {
                     console.error(
                         `Event failed after retries: ${message.id}`
                     );
-
 
                     console.error(
                         error.message
