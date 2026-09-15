@@ -7,6 +7,7 @@ const {
     createFlightSearchKey
 } = require("../utils/cacheKeys");
 
+const {invalidateFlightSearchCache}=require("../utils/cacheInvalidation");
 
 const getFlights = async ({
     from,
@@ -108,23 +109,52 @@ const getFlights = async ({
 
 
 const getFlightById = async(id) => {
-  return await flightRepository.findById(id);
+  const flight = await flightRepository.findById(id);
+
+  if(flight){
+    await invalidateFlightSearchCache();
+  }
+  return flight;
 };
 
-const createFlight = async (flightData) => {
-  return await flightRepository.create(flightData);
+const createFlight = async (data) => {
+    const flight = await flightRepository.create(data);
+
+    if (flight) {
+        await invalidateFlightSearchCache();
+    }
+
+    return flight;
 };
 
-const updateFlight=async (id,data)=>{
-  return await flightRepository.update(id, data);
+const updateFlight = async (id, data) => {
+    const flight = await flightRepository.update(id, data);
+
+    if (flight) {
+        await invalidateFlightSearchCache();
+    }
+
+    return flight;
 };
 
-const patchFlight = async(id, data) => {
-  return await flightRepository.patch(id, data);
+const patchFlight = async (id, data) => {
+    const flight = await flightRepository.patch(id, data);
+
+    if (flight) {
+        await invalidateFlightSearchCache();
+    }
+
+    return flight;
 };
 
 const deleteFlight = async (id) => {
-  return await flightRepository.delete(id);
+    const flight = await flightRepository.delete(id);
+
+    if (flight) {
+        await invalidateFlightSearchCache();
+    }
+
+    return flight;
 };
 
 module.exports = {
