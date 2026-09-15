@@ -6,7 +6,7 @@ const createBookingCreatedEvent=({
     return {
         eventId:crypto.randomUUID(),
         eventType:"BOOKING_CREATED",
-        occuredAt:new Date().toISOString,
+        occurredAt:new Date().toISOString(),
 
         data:{
             bookingId,userId,flightId,seatId

@@ -5,7 +5,7 @@ const BOOKING_STREAM =
     "booking-events";
 
 const publishBookingEvent = async (event) => {
-
+    // console.log("BOOKING EVENT:", event);
     await redisClient.xAdd(
         BOOKING_STREAM,
         "*",
