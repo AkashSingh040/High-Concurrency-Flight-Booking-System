@@ -2,6 +2,7 @@ const express=require("express");
 const flighroutes=require("./routes/flight.routes");
 const authRoutes=require("./routes/auth.routes")
 const bookingRoutes=require("./routes/booking.routes");
+const healthRoutes=require("./routes/health.routes");
 
 const requestLogger=require("./middleware/requestLogger");
 const errorHandler = require("./middleware/errorHandler");
@@ -17,6 +18,7 @@ app.use(cors({
 app.use(express.json());
 app.use(requestLogger);
 
+app.use("/health",healthRoutes);
 app.use("/api/v1/flights",flighroutes);
 app.use("/api/v1/auth",authRoutes);
 app.use("/api/v1/bookings",bookingRoutes);
