@@ -82,7 +82,10 @@ const getFlights = async ({
 
         await redisClient.set(
             cacheKey,
-            JSON.stringify(result)
+            JSON.stringify(result),
+            {
+              EX: Number(process.env.FLIGHT_CACHE_TTL||60)
+            }
         );
 
     } catch (error) {
