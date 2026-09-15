@@ -7,12 +7,19 @@ const {
     BOOKING_STREAM
 } = require("../src/events/event.publisher");
 
+const {
+    retry
+} = require("../src/utils/retry");
+
 
 const CONSUMER_GROUP =
     "notification-workers";
 
 const CONSUMER_NAME =
     `notification-worker-${process.pid}`;
+
+const DLQ_STREAM =
+    "booking-events-dlq";
 
 
 const processEvent = async (message) => {
@@ -28,16 +35,6 @@ const processEvent = async (message) => {
     console.log(
         "\nProcessing event:",
         eventId
-    );
-
-    console.log(
-        "Event type:",
-        eventType
-    );
-
-    console.log(
-        "Occurred at:",
-        occurredAt
     );
 
 
@@ -65,12 +62,62 @@ const processEvent = async (message) => {
             `Seat: ${bookingData.seatId}`
         );
 
-        // Simulate email/SMS
+
+        // Simulated notification
         console.log(
             "Notification sent successfully"
         );
+        // //simulate failure by commenting above and uncommeting below
+        // throw new Error(
+        //     "Simulated email service failure"
+        // );
     }
 };
+
+
+const moveToDeadLetterQueue =
+    async (message, error) => {
+
+        const {
+            eventId,
+            eventType,
+            occurredAt,
+            data
+        } = message.message;
+
+
+        await redisClient.xAdd(
+            DLQ_STREAM,
+            "*",
+            {
+                originalMessageId:
+                    String(message.id),
+
+                eventId:
+                    String(eventId),
+
+                eventType:
+                    String(eventType),
+
+                occurredAt:
+                    String(occurredAt),
+
+                data:
+                    String(data),
+
+                error:
+                    String(error.message),
+
+                failedAt:
+                    new Date().toISOString()
+            }
+        );
+
+
+        console.log(
+            `Moved event ${eventId} to DLQ`
+        );
+    };
 
 
 const startWorker = async () => {
@@ -154,8 +201,13 @@ const startWorker = async () => {
 
                 try {
 
-                    await processEvent(
-                        message
+                    await retry(
+                        () =>
+                            processEvent(
+                                message
+                            ),
+                        3,
+                        1000
                     );
 
 
@@ -170,11 +222,29 @@ const startWorker = async () => {
                         `ACK event: ${message.id}`
                     );
 
+
                 } catch (error) {
 
                     console.error(
-                        "Event processing failed:",
+                        `Event failed after retries: ${message.id}`
+                    );
+
+
+                    console.error(
                         error.message
+                    );
+
+
+                    await moveToDeadLetterQueue(
+                        message,
+                        error
+                    );
+
+
+                    await redisClient.xAck(
+                        BOOKING_STREAM,
+                        CONSUMER_GROUP,
+                        message.id
                     );
                 }
             }
