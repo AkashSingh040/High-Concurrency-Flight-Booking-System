@@ -6,7 +6,7 @@ const {
 
 const authenticate = require("../middleware/auth.middleware");
 
-const rateLimiter=require("../middleware/rateLimiter.middleware");
+const rateLimiter=require("../middleware/redisRateLimit.middleware");
 
 const router = express.Router();
 
