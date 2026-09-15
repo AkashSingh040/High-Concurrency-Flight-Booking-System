@@ -1,28 +1,108 @@
 const flightRepository=require("../repositories/flight.repository");
 
-const getFlights=async ({from,to,page=1,limit=10})=>{
-  const flights=await flightRepository.findAll();
-  let result=flights;
+const redisClient =
+    require("../config/redis");
 
-  if(from){
-    result=result.filter(flight=>flight.from===from);
-  }
+const {
+    createFlightSearchKey
+} = require("../utils/cacheKeys");
 
-  if(to){
-    result=result.filter(flight=>flight.to===to);
-  }
-  const total=result.length;
-  const start=(page-1)*limit;
 
-  const paginatedFlights=result.slice(start,start+limit);
+const getFlights = async ({
+    from,
+    to,
+    page = 1,
+    limit = 10
+}) => {
 
-  return {
-    data:paginatedFlights,
-    pagination:{
-      page,limit,total,totalpages:Math.ceil(total/limit)
+    const cacheKey =
+        createFlightSearchKey({
+            from,
+            to,
+            page,
+            limit
+        });
+
+
+    // -----------------------------
+    // 1. Check Redis
+    // -----------------------------
+
+    try {
+
+        const cached =
+            await redisClient.get(cacheKey);
+
+
+        if (cached) {
+
+            console.log(
+                "CACHE HIT:",
+                cacheKey
+            );
+
+            return JSON.parse(cached);
+        }
+
+
+        console.log(
+            "CACHE MISS:",
+            cacheKey
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Redis read failed:",
+            error.message
+        );
+
+        // Continue to MySQL
     }
-  };
+
+
+    // -----------------------------
+    // 2. Cache miss → MySQL
+    // -----------------------------
+
+    const result =
+        await flightRepository.search({
+            from,
+            to,
+            page,
+            limit
+        });
+
+
+    // -----------------------------
+    // 3. Store result in Redis
+    // -----------------------------
+
+    try {
+
+        await redisClient.set(
+            cacheKey,
+            JSON.stringify(result)
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Redis write failed:",
+            error.message
+        );
+
+        // Still return MySQL result
+    }
+
+
+    // -----------------------------
+    // 4. Return result
+    // -----------------------------
+
+    return result;
 };
+
 
 const getFlightById = async(id) => {
   return await flightRepository.findById(id);

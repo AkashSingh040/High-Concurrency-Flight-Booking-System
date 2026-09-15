@@ -154,6 +154,90 @@ const deleteFlight = async (id) => {
     return result.affectedRows > 0;
 };
 
+const search = async ({
+    from,
+    to,
+    page = 1,
+    limit = 10
+}) => {
+
+    const conditions = [];
+    const values = [];
+
+    if (from) {
+        conditions.push("dep.code = ?");
+        values.push(from);
+    }
+
+    if (to) {
+        conditions.push("arr.code = ?");
+        values.push(to);
+    }
+
+    const whereClause =
+        conditions.length > 0
+            ? `WHERE ${conditions.join(" AND ")}`
+            : "";
+
+    const offset =
+        (Number(page) - 1) * Number(limit);
+
+
+    const [rows] = await pool.query(
+        `SELECT
+            f.id,
+            f.flight_number,
+            f.airline,
+            dep.code AS from_airport,
+            dep.city AS from_city,
+            arr.code AS to_airport,
+            arr.city AS to_city,
+            f.departure_time,
+            f.arrival_time,
+            f.price
+        FROM flights f
+        JOIN airports dep
+            ON f.departure_airport_id = dep.id
+        JOIN airports arr
+            ON f.arrival_airport_id = arr.id
+        ${whereClause}
+        ORDER BY f.departure_time
+        LIMIT ? OFFSET ?`,
+        [
+            ...values,
+            Number(limit),
+            Number(offset)
+        ]
+    );
+
+
+    const [countRows] = await pool.query(
+        `SELECT COUNT(*) AS total
+        FROM flights f
+        JOIN airports dep
+            ON f.departure_airport_id = dep.id
+        JOIN airports arr
+            ON f.arrival_airport_id = arr.id
+        ${whereClause}`,
+        values
+    );
+
+
+    const total = Number(countRows[0].total);
+
+
+    return {
+        data: rows,
+        pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            totalPages: Math.ceil(
+                total / Number(limit)
+            )
+        }
+    };
+};
 
 module.exports = {
     findAll,
@@ -161,5 +245,6 @@ module.exports = {
     create,
     update,
     patch,
-    deleteFlight
+    deleteFlight,
+    search
 };
