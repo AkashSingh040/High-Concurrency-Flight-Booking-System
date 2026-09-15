@@ -2,7 +2,8 @@ const pool=require("../config/db");
 const bookingRepository = require("../repositories/booking.repository");
 const seatRepository = require("../repositories/seat.repository");
 const {createRequestFingerprint}=require("../utils/idempotency");
-
+const {publishBookingEvent} = require("../events/event.publisher");
+const {createBookingCreatedEvent} =require("../events/booking.events")
 
 const createBooking = async ({
     userId,
@@ -54,13 +55,6 @@ const createBooking = async ({
         
         const seat=await seatRepository.findByIdForUpdate(connection,seatId);
 
-        if (seat.status !== "AVAILABLE") {
-            const error = new Error("Seat is already booked");
-            error.statusCode = 409;
-            error.code = "SEAT_UNAVAILABLE";
-            throw error;
-        }
-
         if (!seat) {
         const error = new Error("Seat not found");
         error.statusCode = 404;
@@ -73,6 +67,13 @@ const createBooking = async ({
         error.statusCode = 400;
         error.code = "INVALID_SEAT";
         throw error;
+        }
+
+        if (seat.status !== "AVAILABLE") {
+            const error = new Error("Seat is already booked");
+            error.statusCode = 409;
+            error.code = "SEAT_UNAVAILABLE";
+            throw error;
         }
 
         const booking = await bookingRepository.create(connection,{
@@ -94,6 +95,17 @@ const createBooking = async ({
         }
 
         await connection.commit();
+
+        const event =
+            createBookingCreatedEvent({
+                bookingId: booking.id,
+                userId,
+                flightId,
+                seatId
+            });
+
+        await publishBookingEvent(event);
+
         return booking;
 
     } catch(error){
